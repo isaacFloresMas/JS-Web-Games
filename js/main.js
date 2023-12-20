@@ -8,6 +8,7 @@ let planets = [
     {name: "Urunus", isLife: false},
     {name: "Neptune", isLife: false},
 ];
+
 // let jovians = planets.splice(planets.indexOf("Jupyter"), planets.length);
 // let ter = planets.splice(0, 4);
 
