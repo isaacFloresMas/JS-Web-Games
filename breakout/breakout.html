@@ -6,9 +6,9 @@
     content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>   
-<body style="background-color:rgb(84, 24, 93);">
-    <canvas id="canvas" width="600" height="500" style="border:1px solid black;border-bottom: 2px solid rgb(107, 73, 158);">Hey canvas is not supported chump!</canvas>
-    <button onclick="startGame()">Start</button>
+<body style="background-color: #b99cb0;">
+    <canvas id="canvas" width="420" height="460" style="border:1px solid #EFE1D1;border-bottom: 2px solid #e4b9b2;">Hey canvas is not supported chump!</canvas>
+    <button onclick="startGame()">Start Game</button>
 
     <script>
         const canvas = document.getElementById('canvas');
@@ -16,66 +16,210 @@
         const canvasH = canvas.height;
         const canvasW = canvas.width;
 
-        let x, y, dx, dy, interval;
+        
+        let rightPressed = false;
+        let leftPressed = false;
+        let space = false;
+        let x,y,dx,dy,interval,paddleW,paddleX,paddleY,radius,brickW,brickH,brickOff,score,dxOptions;
+        let bricks = [];
         setVariables();
-        drawCircle(x,y);
-        startGame();
+        drawBall();
+        drawPaddle();
+        createBrickArray();
+        drawBricks();
+        drawScore();
+        paddleNavigation();
+
+        function createBrickArray() {
+            for (let j = 0; j < 3; j++) {
+                bricks[j] = [];
+                for (let i = 0; i < 8; i++) {
+                    bricks[j][i] = {x:0, y:0, isVisible:true};
+                }
+            }
+        }
+
+        function drawBricks() {
+            for (let j = 0; j < 3; j++) {
+                for (let i = 0; i < 8; i++) {
+                    if (bricks[j][i].isVisible) {
+                        const brickX = 20 + i*(brickW+brickOff);
+                        const brickY = 20 + j*38;
+                        bricks[j][i].x = brickX;
+                        bricks[j][i].y = brickY;
+                        ctx.beginPath();
+                        ctx.rect(brickX,brickY,brickW,brickH);
+                        if ((((j*8)+i)-j) % 2 == 0) {
+                            ctx.fillStyle = '#A78295';
+                        } else {
+                            ctx.fillStyle = '#9572B5';
+                        }
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.closePath();
+                    }
+                }
+            }
+        }
 
         function detectCollision() {
-            if (x + dx >= canvas.width || x + dy < 0) {
+            if (x + dx >= canvas.width || x + dx < 0) {
                 dx = -dx;
             }
             if (y + dy < 0 || y + dy > canvas.height) {
                 dy = -dy;
             }
+
+            // paddle detection
+            if (y + dy >= paddleY - radius + 3) {
+                if (x+radius + dx > paddleX && x+radius + dx < (paddleX + paddleW) || x-radius + dx > paddleX && x-radius + dx < (paddleX + paddleW)) {
+                    dy = -dy;
+                    dx += (x + dx - paddleX) / 100;
+                }
+            }
+
+            // brick detection
+            for (let b = 0; b < bricks.length; b++) {
+                for (let i = 0; i < bricks[b].length; i++) {
+                    const bx = bricks[b][i];
+                    if (bx.isVisible && x >= bx.x 
+                    && x <= bx.x+brickW && y-radius >= bx.y
+                    && y-radius <= bx.y+brickH) {
+                        bx.isVisible = false;
+                        score += 1;
+                        dy = -dy;
+                        checkWon();
+                    }
+                }
+            }
         }
 
         function startGame() {
-            interval = setInterval(() => {
-                detectCollision();
-                x += dx;
-                y += dy;
-                gameOver();
-                ctx.clearRect(0,0,canvasW,canvasH);
-                drawCircle(x,y)
-            }, 30);
+            if (!interval) {
+                interval = setInterval(() => {
+                    if (rightPressed && paddleX+paddleW <= canvasW) {
+                        paddleX += 14;
+                    }
+                    if (leftPressed && paddleX >= 0) {
+                        paddleX -= 14;
+                    }
+                    detectCollision();
+                    x += dx;
+                    y += dy;
+                    gameOver();
+                    ctx.clearRect(0,0,canvasW,canvasH);
+                    drawPaddle();
+                    drawBall();
+                    drawBricks();
+                    drawScore();
+                }, 25);
+            }
         }
         
         function gameOver() {
-            if (y == canvasH) {
+            if (y >= canvasH - 15) {
                 alert('game over');
                 setVariables();
+                createBrickArray();
                 clearInterval(interval);
+                interval = null;
+                if (space) {startGame();}
+            }
+        }
+
+        function checkWon() {
+            if (score == 24) {
+                alert('You Won!!!');
+                setVariables();
+                createBrickArray();
+                clearInterval(interval);
+                interval = null;
             }
         }
 
         function setVariables() {
-            x = canvasW / 2;
-            y = canvasH - 40;
-            dx = 10;
+            dxOptions = [-8,9,-10,11,8,-9,10,-11,-10.5,10.5];
+            x = (canvasW / 2);
+            y = canvasH - 37;
+            dx = dxOptions[rand(dxOptions.length)];
             dy = -10;
+            radius = 12;
+            paddleW = 55;
+            paddleX = canvasW / 2 - paddleW / 2;
+            paddleY = canvasH - 17;
+            rightPressed = false;
+            leftPressed = false;
+            space = false;
+            brickW = 40
+            brickH = 13;
+            brickOff = 8;
+            score = 0;
         }
 
-        function drawCircle(x,y) {
+        function drawBall() {
             ctx.beginPath();
-            ctx.arc(x,y,20,0,2*Math.PI,false);
-            ctx.fillStyle = "#a067ae";
+            ctx.arc(x,y,radius,0,2*Math.PI,false);
+            ctx.fillStyle = "#EFE1D1";
             ctx.fill();
             ctx.stroke();
             ctx.closePath();
         }
 
-        function getRandColor() {
-            const rand = (max) => {
-                return Math.floor(Math.random() * max);
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, paddleY, paddleW, 10);
+            ctx.fillStyle = "#C78295";
+            ctx.fill();
+            ctx.stroke();
+            ctx.closePath();
+        }
+
+        function paddleNavigation() {
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+
+            function handleKeyDown(e) {
+                if (e.key == "ArrowRight") {
+                    rightPressed = true;
+                }
+                if (e.key == "ArrowLeft") {
+                    leftPressed = true;
+                }
+                if (e.key == " ") {
+                    space = true;
+                }
             }
-            let choice = ['0','1','2','3','4',
-                          '5','6','7','8','9'];
-            let color = '#7914';
+            function handleKeyUp(e) {
+                if (e.key == "ArrowRight") {
+                    rightPressed = false;
+                }
+                if (e.key == "ArrowLeft") {
+                    leftPressed = false;
+                }
+                if (e.key == " ") {
+                    space = false;
+                }
+            }
+        }
+
+        function drawScore() {
+            ctx.beginPath();
+            ctx.fillStyle = '#000000';
+            ctx.fill();
+            ctx.fillText("Score: " + score,5,13);
+            ctx.closePath();
+        }
+
+        function getRandColor() {
+            let choice = ['0','1','2','3','4'];
+            let color = '#0000';
             for (let i = 0; i < 2; i++) {
                 color += choice[rand(choice.length)];
             }
             return color;
+        }
+        function rand(max) {
+            return Math.floor(Math.random() * max);
         }
 
     </script>
