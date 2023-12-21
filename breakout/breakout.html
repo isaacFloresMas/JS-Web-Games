@@ -6,27 +6,60 @@
     content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>   
-<body style="background-color:rgb(79, 14, 95);">
-    <canvas id="canvas" width="800" height="500">Hey canvas is not supported chump</canvas>
+<body style="background-color:rgb(84, 24, 93);">
+    <canvas id="canvas" width="600" height="500" style="border:1px solid black;border-bottom: 2px solid rgb(107, 73, 158);">Hey canvas is not supported chump!</canvas>
+    <button onclick="startGame()">Start</button>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const canvasH = canvas.height;
+        const canvasW = canvas.width;
 
-        let x = 100;
-        let y = 100;
+        let x, y, dx, dy, interval;
+        setVariables();
         drawCircle(x,y);
+        startGame();
 
-        setInterval(() => {
-            x += 10;
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            drawCircle(x,y)
-        }, 250);
+        function detectCollision() {
+            if (x + dx >= canvas.width || x + dy < 0) {
+                dx = -dx;
+            }
+            if (y + dy < 0 || y + dy > canvas.height) {
+                dy = -dy;
+            }
+        }
+
+        function startGame() {
+            interval = setInterval(() => {
+                detectCollision();
+                x += dx;
+                y += dy;
+                gameOver();
+                ctx.clearRect(0,0,canvasW,canvasH);
+                drawCircle(x,y)
+            }, 30);
+        }
+        
+        function gameOver() {
+            if (y == canvasH) {
+                alert('game over');
+                setVariables();
+                clearInterval(interval);
+            }
+        }
+
+        function setVariables() {
+            x = canvasW / 2;
+            y = canvasH - 40;
+            dx = 10;
+            dy = -10;
+        }
 
         function drawCircle(x,y) {
             ctx.beginPath();
-            ctx.arc(x,y,40,0,2*Math.PI,false);
-            ctx.fillStyle = getRandColor();
+            ctx.arc(x,y,20,0,2*Math.PI,false);
+            ctx.fillStyle = "#a067ae";
             ctx.fill();
             ctx.stroke();
             ctx.closePath();
@@ -36,10 +69,9 @@
             const rand = (max) => {
                 return Math.floor(Math.random() * max);
             }
-
-            let choice = ['0','1','2','3','4','5','6','7',
-                  '8','9','a','b','c','d','e','f'];
-            let color = '#4924';
+            let choice = ['0','1','2','3','4',
+                          '5','6','7','8','9'];
+            let color = '#7914';
             for (let i = 0; i < 2; i++) {
                 color += choice[rand(choice.length)];
             }
